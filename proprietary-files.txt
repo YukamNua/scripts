@@ -67,7 +67,7 @@ aosp-device-tree/rootdir/bin/pstore_annotate.sh
 aosp-device-tree/rootdir/bin/qca6234-service.sh
 aosp-device-tree/rootdir/bin/system_dlkm_modprobe.sh
 aosp-device-tree/rootdir/bin/vendor_modprobe.sh
-aosp-device-tree/rootdir/etc/fstab.qcom
+aosp-device-tree/rootdir/etc/fstab.qcom.zram
 aosp-device-tree/rootdir/etc/init.mmi.charge_only.rc
 aosp-device-tree/rootdir/etc/init.mmi.chipset.rc
 aosp-device-tree/rootdir/etc/init.mmi.debug.rc
@@ -423,6 +423,7 @@ modem/image/modem_pr/so/525_0_0.mbn
 modem/image/modem_pr/so/526_0_0.mbn
 modem/image/modem_pr/so/527_0_0.mbn
 modem/image/modem_pr/so/528_0_0.mbn
+modem/image/modem_pr/so/529_0_0.mbn
 modem/image/modem_pr/so/928_2_0.mbn
 modem/image/modem_pr/so/928_2_1.mbn
 modem/image/modem_pr/so/953_0_0.mbn
@@ -8199,6 +8200,7 @@ system_ext/etc/selinux/system_ext_sepolicy_and_mapping.sha256
 system_ext/etc/selinux/system_ext_service_contexts
 system_ext/etc/selinux/system_ext_tee_service_contexts
 system_ext/etc/sysconfig/android.telephony.satellite.xml
+system_ext/etc/sysconfig/bugreport-whitelist-com.motorola.enterprise.adapter.service.xml
 system_ext/etc/sysconfig/com.motorola.bug2go.powersave.xml
 system_ext/etc/sysconfig/com.motorola.ccc.devicemanagement.powersave.xml
 system_ext/etc/sysconfig/com.motorola.ccc.notification.powersaveQ.xml
