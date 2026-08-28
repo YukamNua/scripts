@@ -1,40 +1,53 @@
+# Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted (subject to the limitations in the
+# disclaimer below) provided that the following conditions are met:
+#
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#
+#    * Redistributions in binary form must reproduce the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer in the documentation and/or other materials provided
+#      with the distribution.
+#
+#    * Neither the name of The Linux Foundation nor the names of its
+#      contributors may be used to endorse or promote products derived
+#      from this software without specific prior written permission.
+#
+# NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+# GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+# HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+# IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This file needs to be executed by vendor_init at boot of the device,
-# both in normal and factory mode.
+# Base path for all VM's
+firmware_directories /product/vm-system/
 
-on early-boot
-	# Change ownership and permision of st nfc device
-	chown nfc nfc /dev/st21nfc
-	chmod 0660 /dev/st21nfc
-	chown secure_element secure_element /dev/st54spi
-	chmod 0660 /dev/st54spi
+# TrustedUI VM
+external_firmware_handler /devices/platform/soc/soc:gh-secure-vm-loader@0/firmware/trustedvm.mdt system "/vendor/bin/vmmgr -r"
+external_firmware_handler /devices/platform/soc/soc:gh-secure-vm-loader@0/firmware/trustedvm.b00 system "/vendor/bin/vmmgr -r"
+external_firmware_handler /devices/platform/soc/soc:gh-secure-vm-loader@0/firmware/trustedvm.b01 system "/vendor/bin/vmmgr -r"
+external_firmware_handler /devices/platform/soc/soc:gh-secure-vm-loader@0/firmware/trustedvm.b02 system "/vendor/bin/vmmgr -r"
+external_firmware_handler /devices/platform/soc/soc:gh-secure-vm-loader@0/firmware/trustedvm.b03 system "/vendor/bin/vmmgr -r"
+external_firmware_handler /devices/platform/soc/soc:gh-secure-vm-loader@0/firmware/trustedvm.b04 system "/vendor/bin/vmmgr -r"
+external_firmware_handler /devices/platform/soc/soc:gh-secure-vm-loader@0/firmware/trustedvm.b05 system "/vendor/bin/vmmgr -r"
 
-on property:ro.vendor.hw.felica=true && property:ro.vendor.hw.nfc=ese_st
-   setprop persist.vendor.nfc.st_nfc_felica_ese 1
-   setprop persist.vendor.nfc.config_file_name "libnfc-nci-st-felica.conf"
-   copy /vendor/etc/sttesttool.json /data/nfc/sttesttool.json
+# fingerprint sysfs node permission
+/sys/class/fingerprint/fpc1020 dev_enable 0660 system system
+/sys/class/fingerprint/fpc1020 hw_reset   0660 system system
+/sys/class/fingerprint/fpc1020 irq        0660 system system
+/sys/class/fingerprint/fpc1020 irq_cnt    0660 system system
 
-on property:ro.boot.revision=dvt1 && property:ro.boot.device=mona
-   setprop persist.vendor.nfc.config_hal_name "libnfc-hal-st-dvt1.conf"
-
-on property:ro.boot.revision=dvt1 && property:ro.boot.device=monai
-   setprop persist.vendor.nfc.config_hal_name "libnfc-hal-st-dvt1.conf"
-
-on property:ro.vendor.hw.nfc=true && property:persist.vendor.radio.multisim.config=*
-	start vendor.stflashtool
-
-on property:ro.vendor.hw.nfc=st && property:persist.vendor.radio.multisim.config=*
-	start vendor.stflashtool
-
-on property:ro.vendor.hw.nfc=ese_st && property:persist.vendor.radio.multisim.config=*
-	start vendor.stflashtool
-
-on property:ro.vendor.hw.nfc=esim_st && property:persist.vendor.radio.multisim.config=*
-	start vendor.stflashtool
-
-service vendor.stflashtool /vendor/bin/STFlashTool -c /vendor/etc/st21nfc_conf.txt -P vendor.nfc.fw_status
-	group nfc
-	user nfc
-	oneshot
-	disabled
+# jiiov fingerprint device node permission
+/dev/jiiov_fp                             0660 system system
 
