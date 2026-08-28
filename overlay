@@ -1,89 +1,166 @@
+```bash
 #!/bin/bash
 # Copyright (c) 2026 ravindu644 <droidcasts@protonmail.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# Linux 6.1+ (GKI 2.0) arm64 kernel build script.
-# Toolchain: clang-r510928 (LLVM only -- no GCC cross compiler needed)
+# Motorola SM6435 / Parrot / Mumba
+# Linux 6.6 GKI arm64 kernel build script.
+# Toolchain: clang-r510928
 #
-# Put this in your kernel root, edit the settings below, then run:
-#   chmod +x build_6.1.sh && ./build_6.1.sh
+# Usage:
+#   chmod +x build_6.6.sh
+#   ./build_6.6.sh
 
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-#  SETTINGS -- the only part you normally need to touch
+# SETTINGS
 # ---------------------------------------------------------------------------
-# Kernel config fragments 
-DEFCONFIG="gki_defconfig" 
-EXTRA_CONFIGS=( "vendor/parrot_perf.config" "vendor/ext_config/moto-parrot-mumba.config" "vendor/ext_config/moto-parrot.config" )
-KERNEL_IMAGE="Image"           # Image | Image.gz | Image.gz-dtb  (MediaTek needs Image.gz)
-USE_OUT_DIR=1                  # 0 = build in-tree; most Samsung Exynos trees need 0
-MENUCONFIG=1                   # 0 = skip the menuconfig GUI
+
+DEFCONFIG="gki_defconfig"
+
+EXTRA_CONFIGS=(
+    "vendor/parrot_perf.config"
+    "vendor/ext_config/moto-parrot-mumba.config"
+    "vendor/ext_config/moto-parrot.config"
+)
+
+KERNEL_IMAGE="Image"
+USE_OUT_DIR=1
+MENUCONFIG=1
+
 export KBUILD_BUILD_USER="@ravindu644"
 
-# Some OEM trees need extra variables -- check README_Kernel.txt or build_kernel.sh:
-# export TARGET_SOC=s5e9925 PLATFORM_VERSION=12 ANDROID_MAJOR_VERSION=s
 # ---------------------------------------------------------------------------
 
 KERNEL_ROOT="$(dirname "$(readlink -f "$0")")"
 CLANG="${HOME}/toolchains/clang-r510928"
+
 cd "${KERNEL_ROOT}"
 
-info(){ echo -e "\n[INFO]: $*\n"; }
-die(){ echo -e "\n[ERROR]: $*\n" >&2; exit 1; }
-
-# fetch <dir> <url> [strip-components] -- does nothing if <dir> already exists
-fetch(){
-    [ -d "$1" ] && return 0
-    info "Downloading $(basename "$1")..."
-    mkdir -p "$1"
-    local z=z; case "$2" in *.xz) z=J;; esac   # tar can't sniff compression off a pipe
-    curl -Lf --progress-bar "$2" | tar -x"$z" -C "$1" --strip-components="${3:-0}" \
-        || { rm -rf "$1"; die "Failed to download $2"; }
+info() {
+    echo -e "\n[INFO]: $*\n"
 }
 
-RPM_PKGS=(make gcc gcc-c++ bc bison flex pkgconf git curl tar xz zip unzip cpio rsync kmod
-          perl python3 openssl openssl-devel openssl-devel-engine elfutils-libelf-devel dwarves
-          ncurses-devel zlib-devel libyaml-devel lz4 zstd dtc)
-DEB_PKGS=(build-essential bc bison flex pkg-config git curl tar xz-utils zip unzip cpio rsync
-          kmod perl python3 python-is-python3 libssl-dev libelf-dev pahole libncurses-dev
-          zlib1g-dev libyaml-dev lz4 zstd device-tree-compiler)
+die() {
+    echo -e "\n[ERROR]: $*\n" >&2
+    exit 1
+}
 
-install_deps(){
-    local missing=() available=() p
+# ---------------------------------------------------------------------------
+# TOOLCHAIN
+# ---------------------------------------------------------------------------
+
+fetch() {
+    [ -d "$1" ] && return 0
+
+    info "Downloading $(basename "$1")..."
+    mkdir -p "$1"
+
+    curl -Lf --progress-bar "$2" | \
+        tar -xz -C "$1" --strip-components="${3:-0}" \
+        || {
+            rm -rf "$1"
+            die "Failed to download $2"
+        }
+}
+
+# ---------------------------------------------------------------------------
+# CHECKS
+# ---------------------------------------------------------------------------
+
+[ -f Makefile ] && [ -d arch/arm64 ] \
+    || die "Run this from the kernel source root."
+
+# ---------------------------------------------------------------------------
+# DEPENDENCIES
+# ---------------------------------------------------------------------------
+
+RPM_PKGS=(
+    make gcc gcc-c++ bc bison flex pkgconf git curl tar xz zip unzip
+    cpio rsync kmod perl python3 openssl openssl-devel
+    openssl-devel-engine elfutils-libelf-devel dwarves
+    ncurses-devel zlib-devel libyaml-devel lz4 zstd dtc
+)
+
+DEB_PKGS=(
+    build-essential bc bison flex pkg-config git curl tar xz-utils
+    zip unzip cpio rsync kmod perl python3 python-is-python3
+    libssl-dev libelf-dev pahole libncurses-dev zlib1g-dev
+    libyaml-dev lz4 zstd device-tree-compiler
+)
+
+install_deps() {
+    local missing=()
+    local available=()
+    local p
+
     if command -v rpm &>/dev/null; then
-        # --whatprovides, not -q: some names are virtual now (zlib-devel -> zlib-ng-compat-devel)
+
         for p in "${RPM_PKGS[@]}"; do
             rpm -q --whatprovides "$p" &>/dev/null || missing+=("$p")
         done
+
         [ "${#missing[@]}" = 0 ] && return 0
+
         info "Installing: ${missing[*]}"
-        sudo dnf install -y --skip-unavailable "${missing[@]}" || die "dnf failed"
+
+        sudo dnf install -y --skip-unavailable "${missing[@]}" \
+            || die "dnf failed"
+
     elif command -v dpkg &>/dev/null; then
+
         for p in "${DEB_PKGS[@]}"; do
-            [ "$(dpkg-query -W -f='${db:Status-Status}' "$p" 2>/dev/null)" = installed ] || missing+=("$p")
+            [ "$(dpkg-query -W -f='${db:Status-Status}' "$p" 2>/dev/null)" = "installed" ] \
+                || missing+=("$p")
         done
+
         [ "${#missing[@]}" = 0 ] && return 0
-        # drop whatever this release no longer ships (e.g. libtinfo5 on Ubuntu 24.04+)
-        for p in "${missing[@]}"; do apt-cache show "$p" &>/dev/null && available+=("$p"); done
+
+        for p in "${missing[@]}"; do
+            apt-cache show "$p" &>/dev/null && available+=("$p")
+        done
+
         [ "${#available[@]}" = 0 ] && return 0
+
         info "Installing: ${available[*]}"
-        sudo apt update && sudo apt install -y "${available[@]}" || die "apt failed"
+
+        sudo apt update
+        sudo apt install -y "${available[@]}" \
+            || die "apt failed"
+
     else
-        info "Unknown package manager -- install the kernel build dependencies yourself."
+        info "Unknown package manager."
+        info "Install the kernel build dependencies manually."
     fi
 }
 
-[ -f Makefile ] && [ -d arch/arm64 ] || die "Run this from the kernel source root."
 install_deps
-[ -f .gitmodules ] && git submodule update --init --recursive
 
-fetch "${CLANG}" "https://github.com/ravindu644/Android-Kernel-Tutorials/releases/download/toolchains/clang-r510928.tar.gz"
+# ---------------------------------------------------------------------------
+# SUBMODULES
+# ---------------------------------------------------------------------------
+
+if [ -f .gitmodules ]; then
+    info "Updating submodules..."
+    git submodule update --init --recursive
+fi
+
+# ---------------------------------------------------------------------------
+# CLANG
+# ---------------------------------------------------------------------------
+
+fetch \
+    "${CLANG}" \
+    "https://github.com/ravindu644/Android-Kernel-Tutorials/releases/download/toolchains/clang-r510928.tar.gz"
+
 export PATH="${CLANG}/bin:${PATH}"
 export LD_LIBRARY_PATH="${CLANG}/lib:${CLANG}/lib64:${LD_LIBRARY_PATH:-}"
 
-# LLVM=1 points every tool (clang, ld.lld, llvm-ar, ...) at the toolchain above.
-# 6.x picks its own --target, so no CROSS_COMPILE and no GCC are involved.
+# ---------------------------------------------------------------------------
+# BUILD OPTIONS
+# ---------------------------------------------------------------------------
+
 BUILD_OPTIONS=(
     -j"$(nproc)"
     ARCH=arm64
@@ -100,20 +177,55 @@ else
     BOOT_DIR="${KERNEL_ROOT}/arch/arm64/boot"
 fi
 
-build_kernel(){
-    info "Kernel $(make kernelversion) | defconfig: ${DEFCONFIG}"
+# ---------------------------------------------------------------------------
+# CONFIG
+# ---------------------------------------------------------------------------
 
-    make "${BUILD_OPTIONS[@]}" "${DEFCONFIG}" "${EXTRA_CONFIGS[@]}" || die "Failed to write .config"
+build_kernel() {
 
+    info "Kernel $(make kernelversion)"
+    info "Using ${DEFCONFIG}"
+
+    # Base GKI configuration
+    make "${BUILD_OPTIONS[@]}" "${DEFCONFIG}" \
+        || die "Failed to generate ${DEFCONFIG}"
+
+    # Motorola / Parrot / Mumba configuration fragments
+    for config in "${EXTRA_CONFIGS[@]}"; do
+        info "Merging ${config}"
+
+        make "${BUILD_OPTIONS[@]}" "${config}" \
+            || die "Failed to merge ${config}"
+    done
+
+    # Optional configuration menu
     if [ "${MENUCONFIG}" = 1 ]; then
+        info "Starting menuconfig..."
         make "${BUILD_OPTIONS[@]}" menuconfig
     fi
 
-    make "${BUILD_OPTIONS[@]}" "${KERNEL_IMAGE}" || die "Build failed"
+    # Build kernel
+    info "Building ${KERNEL_IMAGE}..."
 
+    make "${BUILD_OPTIONS[@]}" "${KERNEL_IMAGE}" \
+        || die "Kernel build failed"
+
+    # Verify output
+    [ -f "${BOOT_DIR}/${KERNEL_IMAGE}" ] \
+        || die "Kernel image was not generated."
+
+    # Copy final image
     mkdir -p "${KERNEL_ROOT}/build"
-    cp "${BOOT_DIR}/${KERNEL_IMAGE}" "${KERNEL_ROOT}/build/"
-    info "Done -> build/${KERNEL_IMAGE}"
+
+    cp \
+        "${BOOT_DIR}/${KERNEL_IMAGE}" \
+        "${KERNEL_ROOT}/build/${KERNEL_IMAGE}"
+
+    info "======================================"
+    info "Kernel build completed successfully!"
+    info "Output: ${KERNEL_ROOT}/build/${KERNEL_IMAGE}"
+    info "======================================"
 }
 
 build_kernel
+```
