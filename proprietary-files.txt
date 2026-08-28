@@ -773,3 +773,4 @@ on property:sys.clear_batt_first_usage_date=true
 on property:vendor.ultrasound.cal=1
    chmod 0771 /mnt/vendor/persist/factory/audio/upd_calib_v2
    chmod 0771 /mnt/vendor/persist/factory/audio/aop_calib_v2
+
