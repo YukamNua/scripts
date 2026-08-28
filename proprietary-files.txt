@@ -51,3 +51,6 @@ external_firmware_handler /devices/platform/soc/soc:gh-secure-vm-loader@0/firmwa
 # jiiov fingerprint device node permission
 /dev/jiiov_fp                             0660 system system
 
+
+
+
