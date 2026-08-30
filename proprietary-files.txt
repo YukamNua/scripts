@@ -6,9 +6,9 @@
             "Values": [
                 "0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0",
                 "0:691200 1:691200 2:691200 3:691200 4:691200 5:691200 6:691200 7:691200",
-                "0:1113600 1:1113600 2:1113600 3:1113600",
                 "0:1804800 1:1804800 2:1804800 3:1804800 4:1497600 5:1497600 6:1497600 7:1497600",
-                "0:1804800 1:1804800 2:1804800 3:1804800 4:1900800 5:1900800 6:1900800 7:1900800"
+                "0:1804800 1:1804800 2:1804800 3:1804800 4:1900800 5:1900800 6:1900800 7:1900800",
+                "4:960000 5:960000 6:960000 7:960000"
             ],
             "DefaultIndex": 0,
             "ResetOnInit": true
@@ -18,9 +18,9 @@
             "Path": "/sys/kernel/msm_performance/parameters/cpu_max_freq",
             "Values": [
                 "0:9999999 1:9999999 2:9999999 3:9999999 4:9999999 5:9999999 6:9999999 7:9999999",
-                "0:1324800 1:1324800 2:1324800 3:1324800",
                 "0:1324800 1:1324800 2:1324800 3:1324800 4:1190400 5:1190400 6:1190400 7:1190400",
                 "0:1804800 1:1804800 2:1804800 3:1804800 4:1900800 5:1900800 6:1900800 7:1900800",
+                "0:1804800 1:1804800 2:1804800 3:1804800 4:2400000 5:2400000 6:2400000 7:2400000",
                 "4:1497600 5:1497600 6:1497600 7:1497600"
             ],
             "DefaultIndex": 0,
@@ -40,7 +40,7 @@
             "Name": "sysClassKgslKgsl3d0DevfreqMaxFreq",
             "Path": "/sys/class/kgsl/kgsl-3d0/devfreq/max_freq",
             "Values": [
-                "940000000",
+                "816000000",
                 "500000000"
             ],
             "DefaultIndex": 0,
@@ -50,6 +50,7 @@
             "Name": "procSysWaltSchedBoost",
             "Path": "/proc/sys/walt/sched_boost",
             "Values": [
+                "0",
                 "1",
                 "2"
             ],
@@ -103,6 +104,26 @@
             "Values": [
                 "51",
                 "0"
+            ],
+            "DefaultIndex": 0,
+            "ResetOnInit": true
+        },
+        {
+            "Name": "sysDevicesSystemCpuCpufreqPolicy0WaltAdaptiveLowFreq",
+            "Path": "/sys/devices/system/cpu/cpufreq/policy0/walt/adaptive_low_freq",
+            "Values": [
+                "0",
+                "691200"
+            ],
+            "DefaultIndex": 0,
+            "ResetOnInit": true
+        },
+        {
+            "Name": "sysDevicesSystemCpuCpufreqPolicy4WaltAdaptiveLowFreq",
+            "Path": "/sys/devices/system/cpu/cpufreq/policy4/walt/adaptive_low_freq",
+            "Values": [
+                "0",
+                "691200"
             ],
             "DefaultIndex": 0,
             "ResetOnInit": true
@@ -235,7 +256,7 @@
             "Name": "devCpuDmaLatency",
             "Path": "/dev/cpu_dma_latency",
             "Values": [
-                "2000000000",
+                "192000",
                 "1"
             ],
             "HoldFd": true
@@ -309,6 +330,30 @@
             "Duration": 0
         },
         {
+            "PowerHint": "LAUNCH",
+            "Node": "procSysWaltSchedBoost",
+            "Value": "1",
+            "Duration": 2000
+        },
+        {
+            "PowerHint": "LAUNCH",
+            "Node": "sysKernelMsmPerformanceParametersCpuMaxFreq",
+            "Value": "0:1804800 1:1804800 2:1804800 3:1804800 4:2400000 5:2400000 6:2400000 7:2400000",
+            "Duration": 2000
+        },
+        {
+            "PowerHint": "LAUNCH",
+            "Node": "sysDevicesSystemCpuCpufreqPolicy0WaltAdaptiveLowFreq",
+            "Value": "691200",
+            "Duration": 2000
+        },
+        {
+            "PowerHint": "LAUNCH",
+            "Node": "sysDevicesSystemCpuCpufreqPolicy4WaltAdaptiveLowFreq",
+            "Value": "691200",
+            "Duration": 2000
+        },
+        {
             "PowerHint": "CAMERA_STREAMING_LOW",
             "Node": "sysDevicesSystemCpuCpufreqPolicy4WaltBoost",
             "Value": "691200",
@@ -336,6 +381,12 @@
             "PowerHint": "CAMERA_STREAMING_LOW",
             "Node": "sysDevicesSystemCpuBusDcvsDdr19091000QcomBwmonDdrSampleMs",
             "Value": "33",
+            "Duration": 0
+        },
+        {
+            "PowerHint": "CAMERA_STREAMING_LOW",
+            "Node": "sysKernelMsmPerformanceParametersCpuMaxFreq",
+            "Value": "4:1497600 5:1497600 6:1497600 7:1497600",
             "Duration": 0
         },
         {
@@ -412,14 +463,14 @@
         },
         {
             "PowerHint": "CAMERA_STREAMING_MID",
-            "Node": "sysKernelMsmPerformanceParametersCpuMaxFreq",
-            "Value": "0:1324800 1:1324800 2:1324800 3:1324800",
+            "Node": "sysKernelMsmPerformanceParametersCpuMinFreq",
+            "Value": "4:960000 5:960000 6:960000 7:960000",
             "Duration": 0
         },
         {
             "PowerHint": "CAMERA_STREAMING_MID",
-            "Node": "sysKernelMsmPerformanceParametersCpuMinFreq",
-            "Value": "0:1113600 1:1113600 2:1113600 3:1113600",
+            "Node": "sysKernelMsmPerformanceParametersCpuMaxFreq",
+            "Value": "4:1497600 5:1497600 6:1497600 7:1497600",
             "Duration": 0
         },
         {
